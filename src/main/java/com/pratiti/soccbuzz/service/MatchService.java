@@ -15,8 +15,12 @@ import com.pratiti.soccbuzz.repository.ScheduleRepository;
 import com.pratiti.soccbuzz.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,8 +71,10 @@ public class MatchService {
         return matchEntity;
     }
 
+    @Cacheable("matches")
     public List<MatchDTO> getAllMatches() {
-        List<MatchEntity> matchEntities = matchRepository.findAll();
+        Sort sort = Sort.by(Sort.Direction.ASC, "matchName");
+        List<MatchEntity> matchEntities = matchRepository.findAll(sort);
 
         return matchEntities.stream()
                 .map(this::convertToMatchDTO)
@@ -98,6 +104,7 @@ public class MatchService {
         return convertToMatchDTO(matchRepository.findById(matchId). get());
         }
 
+    @CacheEvict(value = "matches", allEntries = true)  // Clears cache when a match is updated
     public MatchDTO updateMatch(MatchDTO matchDTO) {
         if(matchRepository.findById(matchDTO.getMatchId()).isEmpty()){
             throw  new MatchNotFoundException("Match Not Found");
@@ -111,5 +118,44 @@ public class MatchService {
         }
         matchRepository.deleteById(matchId);
         return true;
+    }
+
+    public List<MatchDTO> searchMatchesByTeamName(String teamName) {
+        List<MatchEntity> matchesByTeam = matchRepository.findByTeamName(teamName);
+
+        return matchesByTeam.stream()
+                .map(this::convertToMatchDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Search matches by date
+    public List<MatchDTO> searchMatchesByDate(LocalDateTime date) {
+        List<MatchEntity> matchesByDate = matchRepository.findByMatchDate(date);
+
+        return matchesByDate.stream()
+                .map(this::convertToMatchDTO)
+                .collect(Collectors.toList());
+    }
+    public List<MatchDTO> searchMatchesByTeamAndDateRange(String teamName, LocalDateTime startDate, LocalDateTime endDate) {
+        List<MatchEntity> matches = List.of();
+
+        // If both teamName and date range are provided
+        if (teamName != null && startDate != null && endDate != null) {
+            matches = matchRepository.findByTeamNameAndMatchDateBetween(teamName, startDate, endDate);
+        }
+        // If only the teamName is provided
+        else if (teamName != null) {
+            matches = matchRepository.findByTeamName(teamName);
+        }
+//        // If only the date range is provided
+//        else if (startDate != null && endDate != null) {
+//            matches = matchRepository.findByMatchDateBetween(startDate, endDate);
+//        } else {
+//            throw new IllegalArgumentException("Either teamName or date range must be provided.");
+//        }
+
+        return matches.stream()
+                .map(this::convertToMatchDTO)
+                .collect(Collectors.toList());
     }
 }

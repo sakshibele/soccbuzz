@@ -19,11 +19,11 @@ public class TeamEntity {
     private Integer teamId;
     private  String teamName;
 
-    @OneToMany(mappedBy = "team1")
-    private Set<MatchEntity> team_1_matches;
-
-    @OneToMany(mappedBy = "team2")
-    private Set<MatchEntity> team_2_matches;
+//    @OneToMany(mappedBy = "team1")
+//    private Set<MatchEntity> team_1_matches;
+//
+//    @OneToMany(mappedBy = "team2")
+//    private Set<MatchEntity> team_2_matches;
 
     @ManyToOne
     private LeagueEntity league;

@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class TeamDTO {
     private Integer teamId;
     private  String teamName;
+    private LeagueDTO leagueDTO;
 }
